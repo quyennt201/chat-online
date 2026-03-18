@@ -1,0 +1,120 @@
+import { useEffect, useState, type SubmitEventHandler } from "react";
+import { toast } from "react-toastify";
+import { useUserStore } from "../../store/useUser";
+import { socket } from "../../lib/socket";
+import OnlineUsers from "./OnlineUsers";
+
+export default function ChatScreen() {
+  const userId = useUserStore((state) => state.userId);
+  const [onlineUsers, setOnlineUsers] = useState<
+    Array<{ userId: string; socketId: string }>
+  >([]);
+  const [currentUser, setCurrentUser] = useState<string>();
+
+  const [messages, setMessages] = useState([]);
+  const [text, setText] = useState("");
+
+  useEffect(() => {
+    if (!userId) {
+      return;
+    }
+
+    socket.connect();
+    socket.on("connect", () => {
+      socket.emit("addUser", userId);
+      console.log(socket.connected);
+    });
+
+    return () => {
+      socket.disconnect();
+      socket.off("connect");
+    };
+  }, [userId]);
+
+  useEffect(() => {
+    socket.on("getMessage", (data) => {
+      console.log("mess", data);
+      setMessages((prev) => [...prev, data]);
+    });
+
+    return () => {
+      socket.off("getMessage");
+    };
+  }, []);
+
+  useEffect(() => {
+    socket.on("getOnlineUsers", (users) => {
+      if (!users) {
+        toast("Dont't get online users");
+        return;
+      }
+
+      setOnlineUsers(users);
+    });
+
+    return () => {
+      socket.off("getOnlineUsers");
+    };
+  }, []);
+
+  const handleSend = (e: SubmitEventHandler<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!text.trim() || !currentUser) {
+      return;
+    }
+
+    socket.emit("sendMessage", {
+      senderId: userId,
+      receiverId: currentUser,
+      text: text.trim(),
+    });
+
+    setText("");
+  };
+
+  return (
+    <div className="max-w-7xl w-[90vw] h-[80vh] border border-white/10 bg-white/5 backdrop-blur-2xl rounded-xl p-8">
+      {!currentUser ? (
+        <OnlineUsers
+          users={onlineUsers?.filter((u) => u?.userId !== userId)}
+          setCurrentUser={setCurrentUser}
+        />
+      ) : (
+        <div className="size-full flex flex-col gap-6">
+          <p className="text-center">Chat with {currentUser}</p>
+          <div className="flex-1 p-4 border border-white/10 rounded-2xl overflow-y-auto space-y-2">
+            {messages.map((msg, i) => (
+              <div
+                key={i}
+                className={`flex ${
+                  msg.senderId === userId ? "justify-end" : "justify-start"
+                }`}
+              >
+                <div
+                  className={`px-3 py-2 rounded-lg  ${msg.senderId === userId ? "bg-purple-500" : "bg-sky-500"}`}
+                >
+                  {msg.text}
+                </div>
+              </div>
+            ))}
+          </div>
+          <form onSubmit={handleSend} className="flex items-center gap-4">
+            <input
+              type="text"
+              onChange={(e) => setText(e.target.value)}
+              value={text}
+              className="flex-1 px-5 py-3 border border-white/15 bg-white/15 rounded-lg focus:outline-none"
+            />
+            <button
+              type="submit"
+              onClick={handleSend}
+              className="px-3 py-3 rounded-lg bg-sky-500"
+            >
+              Send
+            </button>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,11 @@
+@import 'tailwindcss';
+
+@layer base {
+  body {
+    @apply bg-[#050208] text-white selection:bg-purple-500/30;
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 80px 80px;
+  }
+}
