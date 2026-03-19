@@ -1,4 +1,5 @@
 import { Server } from "socket.io";
+import Conversation from "../models/conversation.model.js";
 
 let onlineUsers = [];
 
@@ -22,21 +23,32 @@ export const initSocket = (server) => {
     });
 
     // send message
-    socket.on("sendMessage", ({ senderId, receiverId, text }) => {
-      console.log(text, senderId, receiverId);
-      const user = onlineUsers.find((u) => u.userId === receiverId);
-      console.log(user);
-      if (user) {
-        io.to(user.socketId).emit("getMessage", {
+    socket.on("sendMessage", async ({ senderId, receiverId, text }) => {
+      try {
+        const conversation = await Conversation.findOne({
+          members: { $all: [senderId, receiverId] },
+        });
+
+        if (!conversation) {
+          return;
+        }
+
+        const user = onlineUsers.find((u) => u.userId === receiverId);
+
+        if (user) {
+          io.to(user.socketId).emit("getMessage", {
+            senderId,
+            text,
+          });
+        }
+
+        socket.emit("getMessage", {
           senderId,
           text,
         });
+      } catch {
+        //
       }
-
-      socket.emit("getMessage", {
-        senderId,
-        text,
-      });
     });
 
     // disconnect
