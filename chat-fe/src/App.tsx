@@ -4,6 +4,7 @@ import HomePage from "./pages/HomePage";
 import AuthPage from "./pages/AuthPage";
 import { ToastContainer } from "react-toastify";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import ConversationPage from "./pages/ConversationPage";
 
 const router = createBrowserRouter([
   {
@@ -13,6 +14,10 @@ const router = createBrowserRouter([
       {
         Component: HomePage,
         index: true,
+      },
+      {
+        Component: ConversationPage,
+        path: "/conversations/:conversationId",
       },
     ],
   },

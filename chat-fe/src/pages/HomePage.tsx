@@ -1,5 +1,5 @@
-import ChatScreen from "../components/chat/ChatScreen";
+import OnlineUsers from "../components/OnlineUsers";
 
 export default function HomePage() {
-  return <ChatScreen />;
+  return <OnlineUsers />;
 }

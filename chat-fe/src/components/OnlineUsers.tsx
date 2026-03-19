@@ -1,6 +1,9 @@
 import clsx from "clsx";
-import { useUsers } from "../../lib/hooks/useUsers";
-import type User from "../../types/user.type";
+import type User from "../types/user.type";
+import { useUsers } from "../lib/hooks/useUsers";
+import { useEffect, useState } from "react";
+import { socket } from "../lib/socket";
+import { toast } from "react-toastify";
 
 export interface IOnlineUsersProps {
   users: {
@@ -10,13 +13,27 @@ export interface IOnlineUsersProps {
   setCurrentUser: (user: User) => void;
 }
 
-export default function OnlineUsers({
-  users: onlineUsers,
-  setCurrentUser,
-}: IOnlineUsersProps) {
-  const { data: allUsers } = useUsers()
+export default function OnlineUsers() {
+  const { data: allUsers } = useUsers();
+  const [onlineUsers, setOnlineUsers] = useState<
+    Array<{ userId: string; socketId: string }>
+  >([]);
 
-  console.log('all', allUsers)
+  useEffect(() => {
+    socket.on("getOnlineUsers", (users) => {
+      if (!users) {
+        toast("Dont't get online users");
+        return;
+      }
+
+      setOnlineUsers(users);
+    });
+
+    return () => {
+      socket.off("getOnlineUsers");
+    };
+  }, []);
+
   if (!allUsers?.length) {
     return <div className="text-center">Not users here!</div>;
   }
@@ -25,7 +42,6 @@ export default function OnlineUsers({
     <div className="flex w-full flex-col">
       {allUsers?.map((user) => (
         <div
-          onClick={() => setCurrentUser(user)}
           className="cursor-pointer hover:bg-white/5 rounded-2xl p-4 flex items-center gap-4 w-full"
         >
           <div className="size-16 rounded-full bg-linear-to-bl from-cyan-200 to-sky-600 relative" >
