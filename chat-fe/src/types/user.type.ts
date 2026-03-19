@@ -5,4 +5,6 @@ export default interface User {
     avatar: string;
     createdAt: string;
     updatedAt: string;
+    lastMessage: string;
+    conversationId: string;
 }

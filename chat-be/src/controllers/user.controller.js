@@ -1,3 +1,4 @@
+import Conversation from "../models/conversation.model.js";
 import User from "../models/user.model.js";
 
 export const getUsersController = async (req, res) => {
@@ -5,12 +6,22 @@ export const getUsersController = async (req, res) => {
         const userIdsString = req.query?.ids 
         const userIds = userIdsString?.split(",")?.map((id) => id?.trim()) || []
 
+        let users;
+
         if(!userIds.length) {
-            const users = await User.find().lean();
-            return res.status(200).json(users.filter((user) => user._id.toString() !== req.user?.userId));
+            users = await User.find().lean();
+        } else {
+            users = await User.find({_id: {$in: userIds}}).lean();
         }
 
-        const users = await User.find({_id: {$in: userIds}}).lean();
+        const conversations = await Conversation.find({members: req.user?.userId}).lean();
+
+        for (const user of users) {
+          const convo = conversations?.find(c => c.members.some((m) => m.toString() === req.user?.userId?.toString()))
+          user.lastMessage =  convo?.lastMessage ?? null;
+          user.conversationId =  convo?._id ?? null;
+        }
+
         res.status(200).json(users.filter((user) => user._id.toString() !== req.user?.userId));
   } catch (error) {
     res.status(500).json({ message: error.message });

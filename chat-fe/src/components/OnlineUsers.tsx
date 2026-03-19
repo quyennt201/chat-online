@@ -4,6 +4,7 @@ import { useUsers } from "../lib/hooks/useUsers";
 import { useEffect, useState } from "react";
 import { socket } from "../lib/socket";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
 export interface IOnlineUsersProps {
   users: {
@@ -18,6 +19,16 @@ export default function OnlineUsers() {
   const [onlineUsers, setOnlineUsers] = useState<
     Array<{ userId: string; socketId: string }>
   >([]);
+
+  const navigate = useNavigate()
+
+  const handleClick = (conversationId: string, receiverId: string) => {
+    navigate(`/conversations/${conversationId}`, {
+      state: {
+        receiverId
+      }
+    })
+  }
 
   useEffect(() => {
     socket.on("getOnlineUsers", (users) => {
@@ -42,6 +53,7 @@ export default function OnlineUsers() {
     <div className="flex w-full flex-col">
       {allUsers?.map((user) => (
         <div
+          onClick={() => handleClick(user.conversationId ?? '', user._id)}
           className="cursor-pointer hover:bg-white/5 rounded-2xl p-4 flex items-center gap-4 w-full"
         >
           <div className="size-16 rounded-full bg-linear-to-bl from-cyan-200 to-sky-600 relative" >
@@ -49,8 +61,8 @@ export default function OnlineUsers() {
           </div>
           <div className="flex-1 space-y-1">
             <p>Username: {user.username}</p>
-            {onlineUsers.some((u) => u.userId === user._id) && (
-              <p>SocketId: {onlineUsers.find((u) => u.userId === user._id)?.socketId}</p>
+            {user.lastMessage && (
+              <p>{user.lastMessage}</p>
             )}
           </div>
         </div>

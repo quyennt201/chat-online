@@ -75,6 +75,7 @@ export function useGetConversationById(conversationId: string) {
             const data: Conversation = await res.json();
             return data;
         },
+        enabled: !!conversationId && !!accessToken,
     });
 }
 

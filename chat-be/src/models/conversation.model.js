@@ -8,6 +8,11 @@ const ConversationSchema = new Schema
                 ref: "User",
                 required: true
             },
+            messages: {
+                type: [mongoose.Schema.Types.ObjectId],
+                ref: "Message",
+                default: []
+            },
             lastMessage: String,
             updatedAt: String,
         },

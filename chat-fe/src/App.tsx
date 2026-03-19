@@ -17,6 +17,10 @@ const router = createBrowserRouter([
       },
       {
         Component: ConversationPage,
+        path: "/conversations",
+      },
+      {
+        Component: ConversationPage,
         path: "/conversations/:conversationId",
       },
     ],

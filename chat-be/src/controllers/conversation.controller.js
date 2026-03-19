@@ -1,10 +1,11 @@
 import Conversation from "../models/conversation.model.js";
+import Message from "../models/message.model.js";
 
 export const createConversation = async (req, res) => {
   try {
     const { receiverId } = req.body;
     const senderId = req.user?.userId;
-
+console.log(senderId, 's', receiverId)
     const existing = await Conversation.findOne({
       members: { $all: [senderId, receiverId] },
     });
@@ -36,7 +37,7 @@ export const getConversationsMe = async (req, res) => {
 export const getConversationById = async (req, res) => {
   try {
     const { conversationId } = req.params;
-    const conversation = await Conversation.findById(conversationId).populate("members");
+    const conversation = await Conversation.findById(conversationId).populate("members").populate("messages");
     return res.json(conversation);
   } catch {
     return res.status(500).json({ message: "An error occur" });
