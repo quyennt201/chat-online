@@ -1,5 +1,5 @@
 import User from "../models/user.model.js";
-import bcrypt from "bcrypt";
+import * as bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 export const registerController = async (req, res) => {
@@ -19,6 +19,8 @@ export const registerController = async (req, res) => {
     const user = await User.create({
       username,
       password: hashedPassword,
+      avatar: null,
+      email: null
     });
 
     const token = jwt.sign(
@@ -50,13 +52,14 @@ export const loginController = async (req, res) => {
       return res.status(400).json({ message: "Missing fields" });
     }
 
-    const exitedUser = await User.findOne({ username });
+    const exitedUser = await User.findOne({ username }).select('+password');
 
     if (!exitedUser) {
       return res.status(400).json({ message: "User not exist" });
     }
 
     const isMatch = await bcrypt.compare(password, exitedUser.password);
+
     if (!isMatch) {
       return res.status(400).json({ message: "Password is invalid" });
     }
@@ -77,6 +80,7 @@ export const loginController = async (req, res) => {
       user: userData,
     });
   } catch (err) {
+    console.log(err)
     res.status(500).json({ message: "An error occur" });
   }
 };

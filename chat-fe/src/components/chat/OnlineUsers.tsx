@@ -1,29 +1,41 @@
+import clsx from "clsx";
+import { useUsers } from "../../lib/hooks/useUsers";
+import type User from "../../types/user.type";
+
 export interface IOnlineUsersProps {
   users: {
     userId: string;
     socketId: string;
   }[];
-  setCurrentUser: (userId: string) => void;
+  setCurrentUser: (user: User) => void;
 }
 
 export default function OnlineUsers({
-  users,
+  users: onlineUsers,
   setCurrentUser,
 }: IOnlineUsersProps) {
-  if (!users.length) {
-    return <div className="text-center">not online users</div>;
+  const { data: allUsers } = useUsers()
+
+  console.log('all', allUsers)
+  if (!allUsers?.length) {
+    return <div className="text-center">Not users here!</div>;
   }
+
   return (
     <div className="flex w-full flex-col">
-      {users.map((user) => (
+      {allUsers?.map((user) => (
         <div
-          onClick={() => setCurrentUser(user.userId)}
+          onClick={() => setCurrentUser(user)}
           className="cursor-pointer hover:bg-white/5 rounded-2xl p-4 flex items-center gap-4 w-full"
         >
-          <div className="size-16 rounded-full bg-linear-to-bl from-cyan-200 to-sky-600" />
+          <div className="size-16 rounded-full bg-linear-to-bl from-cyan-200 to-sky-600 relative" >
+            <div className={clsx("absolute bottom-1 right-1 z-10 size-3 shadow rounded-full", onlineUsers.some((u) => u.userId === user._id) ? 'bg-green-500' : 'bg-gray-400')} />
+          </div>
           <div className="flex-1 space-y-1">
-            <p>UserId: {user.userId}</p>
-            <p>SocketId: {user.socketId}</p>
+            <p>Username: {user.username}</p>
+            {onlineUsers.some((u) => u.userId === user._id) && (
+              <p>SocketId: {onlineUsers.find((u) => u.userId === user._id)?.socketId}</p>
+            )}
           </div>
         </div>
       ))}

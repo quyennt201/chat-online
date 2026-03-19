@@ -7,6 +7,8 @@ import messageRouter from "./routes/message.route.js";
 import http from "http";
 import { initSocket } from "./socket/socket.js";
 import cors from "cors";
+import userRouter from "./routes/user.route.js";
+import morgan from "morgan";
 
 const app = express();
 const server = http.createServer(app);
@@ -16,6 +18,7 @@ dotenv.config();
 connectDB();
 
 app.use(express.json());
+app.use(morgan('dev'))
 app.use(
   cors({
     origin: "*",
@@ -24,6 +27,7 @@ app.use(
 app.use("/", authRouter);
 app.use("/conversation", conversationRouter);
 app.use("/message", messageRouter);
+app.use("/users", userRouter)
 
 initSocket(server);
 
