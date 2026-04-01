@@ -2,25 +2,69 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import { useUserStore } from "../../store/useUser";
 import { socket } from "../../lib/socket";
-import type User from "../../types/user.type";
 import { ArrowLeftIcon } from "lucide-react";
 import clsx from "clsx";
 import type { Message } from "../../types/message";
+import { useGetConversationById } from "../../lib/hooks/useConversation";
+import { useNavigate } from "react-router-dom";
+import { useSendMessage } from "../../lib/hooks/useMessage";
 
-export default function ChatScreen() {
-  const userId = useUserStore((state) => state.userId);
+export default function ChatScreen({
+  conversationId,
+}: {
+  conversationId: string;
+}) {
+  const navigate = useNavigate();
+
   const [onlineUsers, setOnlineUsers] = useState<
     Array<{ userId: string; socketId: string }>
   >([]);
-  const [currentUser, setCurrentUser] = useState<User>();
-
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
 
+  const { data: conversation } = useGetConversationById(conversationId);
+  const userId = useUserStore((state) => state.userId);
+  const { mutateAsync } = useSendMessage();
+  console.log(conversation);
+  const currentUser = conversation?.members.find((m) => m._id !== userId);
+
+  const handleSend = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!text.trim() || !currentUser) {
+      return;
+    }
+
+    try {
+      await mutateAsync({ conversationId, text });
+
+      const sentMessage = {
+        text,
+        senderId: userId || "",
+        conversationId,
+        _id: "",
+        updatedAt: "",
+        createdAt: "",
+      };
+
+      setMessages((prev) =>
+        !prev?.length ? [sentMessage] : [...prev, sentMessage],
+      );
+      setText("");
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast.error("Failed to send message");
+    }
+
+    // socket.emit("sendMessage", {
+    //   senderId: userId,
+    //   receiverId: currentUser,
+    //   text: text.trim(),
+    // });
+  };
+
   useEffect(() => {
     socket.on("getMessage", (data) => {
-      console.log("mess", data);
-      setMessages((prev) => !prev?.length ? [data] : [...prev, data]);
+      setMessages((prev) => (!prev?.length ? [data] : [...prev, data]));
     });
 
     return () => {
@@ -43,31 +87,29 @@ export default function ChatScreen() {
     };
   }, []);
 
-  const handleSend = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!text.trim() || !currentUser) {
-      return;
-    }
-
-    socket.emit("sendMessage", {
-      senderId: userId,
-      receiverId: currentUser,
-      text: text.trim(),
-    });
-
-    setText("");
-  };
+  useEffect(() => {
+    setMessages(conversation?.messages || []);
+  }, [conversation?.messages]);
 
   return (
-    // <div className="max-w-7xl w-[90vw] h-[80vh] border border-white/10 bg-white/5 backdrop-blur-2xl rounded-xl p-8">
     <div className="size-full flex flex-col gap-6">
       <div className="flex items-center gap-2">
-        <button onClick={() => setCurrentUser(undefined)} className="text-sm cursor-pointer hover:text-purple-500 transition">
+        <button
+          onClick={() => navigate("/")}
+          className="text-sm cursor-pointer hover:text-purple-500 transition"
+        >
           <ArrowLeftIcon className="size-5" />
         </button>
         <div className="flex items-center gap-2">
-          <div className="size-10 rounded-full bg-linear-to-bl from-cyan-200 to-sky-600 relative" >
-            <div className={clsx("absolute bottom-0.5 right-0.5 z-10 size-2 shadow rounded-full", onlineUsers.some((u) => u.userId === currentUser?._id) ? 'bg-green-500' : 'bg-gray-400')} />
+          <div className="size-10 rounded-full bg-linear-to-bl from-cyan-200 to-sky-600 relative">
+            <div
+              className={clsx(
+                "absolute bottom-0.5 right-0.5 z-10 size-2 shadow rounded-full",
+                onlineUsers.some((u) => u.userId === currentUser?._id)
+                  ? "bg-green-500"
+                  : "bg-gray-400",
+              )}
+            />
           </div>
           <p className="text-purple-500 font-medium">{currentUser?.username}</p>
         </div>
@@ -76,8 +118,9 @@ export default function ChatScreen() {
         {messages.map((msg, i) => (
           <div
             key={i}
-            className={`flex ${msg.senderId === userId ? "justify-end" : "justify-start"
-              }`}
+            className={`flex ${
+              msg.senderId === userId ? "justify-end" : "justify-start"
+            }`}
           >
             <div
               className={`px-3 py-2 rounded-lg  ${msg.senderId === userId ? "bg-purple-500" : "bg-sky-500"}`}
@@ -94,14 +137,10 @@ export default function ChatScreen() {
           value={text}
           className="flex-1 px-5 py-3 border border-white/15 bg-white/15 rounded-lg focus:outline-none"
         />
-        <button
-          type="submit"
-          className="px-3 py-3 rounded-lg bg-sky-500"
-        >
+        <button type="submit" className="px-3 py-3 rounded-lg bg-sky-500">
           Send
         </button>
       </form>
     </div>
-    // </div>
   );
 }

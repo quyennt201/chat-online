@@ -1,5 +1,6 @@
 import Message from "../models/message.model.js";
 import Conversation from "../models/conversation.model.js";
+import { getIO, getUser } from "../socket/socket.js";
 
 export const sendMessage = async (req, res) => {
   try {
@@ -16,9 +17,31 @@ export const sendMessage = async (req, res) => {
       text: text,
     });
 
-    await Conversation.findByIdAndUpdate(conversationId, {
+    const conversation = await Conversation.findByIdAndUpdate(conversationId, {
       lastMessage: text,
     });
+
+    conversation.lastMessage = text;
+    await conversation.save();
+
+    const io = getIO();
+
+    const receiverId = conversation.members.find(
+      (m) => m.toString() !== senderId.toString(),
+    );
+    const receiver = getUser(receiverId);
+
+    const messageData = {
+      _id: message._id,
+      conversationId,
+      senderId,
+      text,
+      createdAt: message.createdAt,
+    };
+
+    if (receiver) {
+      io.to(receiver.socketId).emit("getMessage", messageData);
+    }
 
     res.status(201).json(message);
   } catch {

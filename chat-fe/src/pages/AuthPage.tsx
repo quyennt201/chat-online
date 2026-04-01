@@ -9,19 +9,21 @@ export default function AuthPage() {
   const [selected, setSelected] = useState("login");
 
   const accessToken = useUserStore((state) => state.accessToken);
-
+  console.log(accessToken);
   if (accessToken) {
     return <Navigate to="/" />;
   }
 
   return (
     <AppLayout>
-      {selected === "login" && (
-        <LoginForm onClickRegister={() => setSelected("register")} />
-      )}
-      {selected === "register" && (
-        <RegisterForm onClickLogin={() => setSelected("login")} />
-      )}
+      <div className="h-full w-full flex items-center justify-center">
+        {selected === "login" && (
+          <LoginForm onClickRegister={() => setSelected("register")} />
+        )}
+        {selected === "register" && (
+          <RegisterForm onClickLogin={() => setSelected("login")} />
+        )}
+      </div>
     </AppLayout>
   );
 }

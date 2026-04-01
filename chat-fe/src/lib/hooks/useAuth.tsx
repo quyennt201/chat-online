@@ -34,7 +34,6 @@ export const useLogin = () => {
         }
 
         const data: UserLoginResponse = await res.json();
-
         setUser(data.accessToken, data.user._id);
         return data;
       } catch {
